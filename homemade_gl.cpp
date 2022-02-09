@@ -113,6 +113,7 @@ void triangle(Vec4f* points, IShader* shader, float* zbuffer, TGAImage& image) {
             for (int k = 0; k < 3; k++) {
                 z += points[k][2] * bary[k];
             }
+            z /= 10;
             if (zbuffer[i + j * width] < z) {
                 TGAColor color;
                 bool discard = shader->fragment(bary, color);

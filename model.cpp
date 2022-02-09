@@ -45,6 +45,9 @@ Model::Model(const char* filename) : verts_(), faces_(), norms_(), uv_(), diffus
     load_texture(filename, "_diffuse.tga", diffusemap_);
     load_texture(filename, "_nm_tangent.tga", normalmap_);
     load_texture(filename, "_spec.tga", specularmap_);
+#ifdef DIABLO3_POSE
+    load_texture(filename, "_glow.tga", glow_);
+#endif
 }
 
 Model::~Model() {}
@@ -98,6 +101,13 @@ Vec3f Model::normal(Vec2f uvf) {
 Vec2f Model::uv(int iface, int nthvert) {
     return uv_[faces_[iface][nthvert][1]];
 }
+
+#ifdef DIABLO3_POSE
+TGAColor Model::glow(Vec2f uvf) {
+    Vec2i uv(uvf[0] * glow_.get_width(), uvf[1] * glow_.get_height());
+    return glow_.get(uv[0], uv[1]);
+}
+#endif
 
 float Model::specular(Vec2f uvf) {
     Vec2i uv(uvf[0] * specularmap_.get_width(), uvf[1] * specularmap_.get_height());

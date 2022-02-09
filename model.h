@@ -5,6 +5,8 @@
 #include "geometry.h"
 #include "tgaimage.h"
 
+#define DIABLO3_POSE
+
 class Model {
 private:
     std::vector<Vec3f> verts_;
@@ -14,6 +16,9 @@ private:
     TGAImage diffusemap_;
     TGAImage normalmap_;
     TGAImage specularmap_;
+#ifdef DIABLO3_POSE
+    TGAImage glow_;
+#endif
     void load_texture(std::string filename, const char* suffix, TGAImage& img);
 public:
     Model(const char* filename);
@@ -26,6 +31,9 @@ public:
     Vec3f vert(int iface, int nthvert);
     Vec2f uv(int iface, int nthvert);
     TGAColor diffuse(Vec2f uv);
+#ifdef DIABLO3_POSE
+    TGAColor glow(Vec2f uv);
+#endif
     float specular(Vec2f uv);
     std::vector<int> face(int idx);
 };

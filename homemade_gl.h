@@ -5,9 +5,11 @@
 
 
 const int depth = 255;
-const int width = 3000;
-const int height = 3000;
+const int width = 800;
+const int height = 800;
 const bool aa = false;
+const bool dof = true;
+const bool edge_cellshading = true;
 
 struct IShader {
     virtual Vec4f vertex(int iface, int nthvert) = 0;
