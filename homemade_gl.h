@@ -5,8 +5,8 @@
 
 
 const int depth = 255;
-const int width = 800;
-const int height = 800;
+const int width = 5000;
+const int height = 5000;
 const bool aa = false;
 const bool dof = true;
 const bool edge_cellshading = true;

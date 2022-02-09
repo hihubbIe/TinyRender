@@ -123,7 +123,7 @@ int main(int argc, char** argv) {
     //printArr(zbuffer, width, height);
 
     if (edge_cellshading) {
-        const int edge_width = 7;
+        const int edge_width = std::max(width / 1000, 2);
 
         TGAImage aoimage(image.get_width(), image.get_height(), TGAImage::RGB);
 #pragma omp parallel for
