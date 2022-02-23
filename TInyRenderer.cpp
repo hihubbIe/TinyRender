@@ -1,5 +1,7 @@
 ﻿// TInyRenderer.cpp : Defines the entry point for the application.
 //
+// toggle different post processing modes in with "aa", "dof" and "edge_cellshading" homemade_gl.h (each will produce one image)
+// #define model to render in model.h (so it's defined in every file)
 
 #include "cstdlib"
 #include "iostream"
@@ -19,19 +21,34 @@ float* zbuffer;
 const float ZBUFFER_MIN = -10;
 
 #ifdef AFRICAN_HEAD_1
-const char* files[1] = { "obj/african_head/african_head.obj" }; int file_count = 1; const float focus = 19; const float focus_strength = 1.1f;
+const char* files[1] = { "obj/african_head/african_head.obj" }; 
+int file_count = 1; 
+const float focus = 19; 
+const float focus_strength = 1.1f;
 #endif
 #ifdef AFRICAN_HEAD_3
-const char* files[3] = { "obj/african_head/african_head.obj", "obj/african_head/african_head_eye_inner.obj", "obj/african_head/african_head_eye_outer.obj" }; int file_count = 3; const float focus = 19; const float focus_strength = 1.1f;
+const char* files[3] = { "obj/african_head/african_head.obj", "obj/african_head/african_head_eye_inner.obj", "obj/african_head/african_head_eye_outer.obj" }; 
+int file_count = 3; 
+const float focus = 19; 
+const float focus_strength = 1.1f;
 #endif
 #ifdef AFRICAN_HEAD_2
-const char* files[2] = { "obj/african_head/african_head.obj", "obj/african_head/african_head_eye_inner.obj" }; int file_count = 2; const float focus = 19; const float focus_strength = 1.1f;
+const char* files[2] = { "obj/african_head/african_head.obj", "obj/african_head/african_head_eye_inner.obj" }; 
+int file_count = 2; 
+const float focus = 19; 
+const float focus_strength = 1.1f;
 #endif
 #ifdef BOGGIE
-const char* files[3] = { "obj/boggie/body.obj", "obj/boggie/head.obj", "obj/boggie/eyes.obj" }; int file_count = 3; const float focus = 15; const float focus_strength = 1.4f;
+const char* files[3] = { "obj/boggie/body.obj", "obj/boggie/head.obj", "obj/boggie/eyes.obj" }; 
+int file_count = 3; 
+const float focus = 15; 
+const float focus_strength = 1.4f;
 #endif
 #ifdef DIABLO3_POSE
-const char* files[1] = { "obj/diablo3_pose/diablo3_pose.obj" }; int file_count = 1; const float focus = 16; const float focus_strength = 0.9f;
+const char* files[1] = { "obj/diablo3_pose/diablo3_pose.obj" }; 
+int file_count = 1; 
+const float focus = 16; 
+const float focus_strength = 0.9f;
 #endif
 
 void printM(Matrix m) {
@@ -63,8 +80,8 @@ struct Shader : public IShader {
 
     virtual Vec4f vertex(int iface, int nthvert) {
         varying_uv.set_col(nthvert, current_model->uv(iface, nthvert));
-        Vec4f v = embed<4>(current_model->vert(iface, nthvert)); // read the vertex from .obj file
-        return mVP * mProj * mMV * v; // transform it to screen coordinates
+        Vec4f v = embed<4>(current_model->vert(iface, nthvert));
+        return mVP * mProj * mMV * v;
     }
 
     virtual bool fragment(Vec3f bar, TGAColor& color) {
@@ -121,54 +138,7 @@ int main(int argc, char** argv) {
     }
 
     //printArr(zbuffer, width, height);
-
-    if (edge_cellshading) {
-        const int edge_width = std::max(width / 1000, 2);
-
-        TGAImage aoimage(image.get_width(), image.get_height(), TGAImage::RGB);
-#pragma omp parallel for
-        for (int i = 0; i < image.get_width(); i++) {
-            for (int j = 0; j < image.get_height(); j++) {
-
-                TGAColor pixel = image.get(i, j);
-                const float pixel_depth = zbuffer[j * width + i];
-                if (pixel_depth == ZBUFFER_MIN) {
-                    aoimage.set(i, j, TGAColor(50, 50, 50));
-                    continue;
-                }
-
-                int istart = -edge_width;
-                int iend = edge_width;
-                int jstart = -edge_width;
-                int jend = edge_width;
-                bool isEdge = false;
-
-                for (int di = istart; di < iend; di++) {
-                    for (int dj = jstart; dj < jend; dj++) {
-                        int x = i + di;
-                        if (x < 0 || x >= image.get_width()) continue;
-                        int y = j + dj;
-                        if (y < 0 || y >= image.get_height()) continue;
-                        if (di == 0 && dj == 0) continue;
-                        TGAColor neighbour = image.get(x, y);
-                        if (zbuffer[y * width + x] == ZBUFFER_MIN) {
-                            isEdge = true;
-                            break;
-                        }
-                        const float neighbor_depth = zbuffer[y * width + x];
-                        float distance = std::abs(neighbor_depth - pixel_depth);
-                        if (distance > 0.4f && neighbor_depth > pixel_depth) {
-                            isEdge = true;
-                            break;
-                        }
-                    }
-                }
-
-                aoimage.set(i, j, isEdge ? TGAColor(0, 0, 0) : pixel);
-            }
-        }
-        aoimage.write_tga_file("ecs_output.tga");
-    }
+    TGAImage render_image(image.get_width(), image.get_height(), TGAImage::RGB);
     
     if (dof) {
 
@@ -214,16 +184,68 @@ int main(int argc, char** argv) {
                 pixel.bgra[1] = (g / pixelsweight) * std::pow(0.92f, std::pow((float)ddepth, 1.2f));
                 pixel.bgra[0] = (b / pixelsweight) * std::pow(0.92f, std::pow((float)ddepth, 1.2f));
                 aoimage.set(i, j, pixel);
+                render_image.set(i, j, pixel);
             }
         }
         aoimage.write_tga_file("dof_output.tga");
+    }
+
+    if (edge_cellshading) {
+        const int edge_width = std::max(width / 1000, 2);
+
+        TGAImage aoimage(image.get_width(), image.get_height(), TGAImage::RGB);
+#pragma omp parallel for
+        for (int i = 0; i < image.get_width(); i++) {
+            for (int j = 0; j < image.get_height(); j++) {
+
+                TGAColor pixel = image.get(i, j);
+                const float pixel_depth = zbuffer[j * width + i];
+                if (pixel_depth == ZBUFFER_MIN) {
+                    aoimage.set(i, j, TGAColor(50, 50, 50));
+                    continue;
+                }
+
+                int istart = -edge_width;
+                int iend = edge_width;
+                int jstart = -edge_width;
+                int jend = edge_width;
+                bool isEdge = false;
+
+                for (int di = istart; di < iend; di++) {
+                    for (int dj = jstart; dj < jend; dj++) {
+                        int x = i + di;
+                        if (x < 0 || x >= image.get_width()) continue;
+                        int y = j + dj;
+                        if (y < 0 || y >= image.get_height()) continue;
+                        if (di == 0 && dj == 0) continue;
+                        TGAColor neighbour = image.get(x, y);
+                        if (zbuffer[y * width + x] == ZBUFFER_MIN) {
+                            isEdge = true;
+                            break;
+                        }
+                        const float neighbor_depth = zbuffer[y * width + x];
+                        float distance = std::abs(neighbor_depth - pixel_depth);
+                        if (distance > 0.4f && neighbor_depth > pixel_depth) {
+                            isEdge = true;
+                            break;
+                        }
+                    }
+                }
+
+                aoimage.set(i, j, isEdge ? TGAColor(0, 0, 0) : pixel);
+                if (isEdge) {
+                    render_image.set(i, j, TGAColor(0, 0, 0));
+                }
+            }
+        }
+        aoimage.write_tga_file("ecs_output.tga");
     }
 
     if (aa) {
         TGAImage aaimage(image.get_width(), image.get_height(), TGAImage::RGB);
 
         int const samplesize = 1;
-#pragma omp
+#pragma omp parallel for
         for (int i = 0; i < image.get_width(); i++) {
             for (int j = 0; j < image.get_height(); j++) {
                 TGAColor pixel = image.get(i, j);
@@ -260,7 +282,8 @@ int main(int argc, char** argv) {
         aaimage.write_tga_file("aa_output.tga");
     }
 
-    //image.flip_vertically(); // i want to have the origin at the left bottom corner of the image
+    //image.flip_vertically();
+    if (edge_cellshading && dof) render_image.write_tga_file("DOF_AND_ECS_output.tga");
     image.write_tga_file("output.tga");
     return 0;
 }

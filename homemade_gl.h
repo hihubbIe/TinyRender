@@ -5,11 +5,11 @@
 
 
 const int depth = 255;
-const int width = 5000;
-const int height = 5000;
-const bool aa = false;
-const bool dof = true;
-const bool edge_cellshading = true;
+const int width = 3000;
+const int height = 3000;
+const bool aa = false; // Not too interesting -> just a blur + very slow
+const bool dof = true; // Depth Of Field effect
+const bool edge_cellshading = true; // Edge cell shading effect (black outlines based on depth difference)
 
 struct IShader {
     virtual Vec4f vertex(int iface, int nthvert) = 0;
